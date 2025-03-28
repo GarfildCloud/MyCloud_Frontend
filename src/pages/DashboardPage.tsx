@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import {useState, useEffect} from 'react';
 import {
   Container, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, IconButton, Alert, CircularProgress,
@@ -12,9 +12,9 @@ import ShareIcon from '@mui/icons-material/Share';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import AddIcon from '@mui/icons-material/Add';
 
-import { getAccessToken } from '../services/auth';
+import {getAccessToken} from '../services/auth';
 import axios from 'axios';
-import { API_URL } from '../config';
+import {API_URL} from '../config';
 
 // ✅ Переименованный интерфейс для хранимого файла
 interface StoredFile {
@@ -37,9 +37,16 @@ export default function DashboardPage() {
   const [openDialog, setOpenDialog] = useState(false);
   const [uploadError, setUploadError] = useState('');
 
+  // Стейт для отображения окна подтверждения удаления файла
+  const [confirmDelete, setConfirmDelete] = useState<{
+    open: boolean;
+    fileId: string | null;
+    fileName: string;
+  }>({open: false, fileId: null, fileName: ''});
+
   const getAuthHeaders = () => {
     const token = getAccessToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    return token ? {Authorization: `Bearer ${token}`} : {};
   };
 
   const sortFilesByName = (files: StoredFile[]) => {
@@ -51,7 +58,7 @@ export default function DashboardPage() {
       setIsLoading(true);
       try {
         const headers = getAuthHeaders();
-        const response = await axios.get(`${API_URL}/storage/`, { headers });
+        const response = await axios.get(`${API_URL}/storage/`, {headers});
         setFiles(sortFilesByName(response.data));
       } catch {
         setError('Ошибка при загрузке файлов');
@@ -102,14 +109,23 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDeleteFile = async (id: string) => {
+  // Подготовка к удалению — открываем диалог
+  const askDeleteFile = (fileId: string, fileName: string) => {
+    setConfirmDelete({open: true, fileId, fileName});
+  };
+
+  // Удаление файла после подтверждения
+  const confirmDeleteFile = async () => {
+    if (!confirmDelete.fileId) return;
+
     setIsLoading(true);
     try {
       const headers = getAuthHeaders();
-      await axios.delete(`${API_URL}/storage/${id}/`, { headers });
-      setFiles(files.filter(f => f.id !== id));
-    } catch {
-      setError('Ошибка при удалении файла');
+      await axios.delete(`${API_URL}/storage/${confirmDelete.fileId}/`, {headers});
+      setFiles(files.filter((file) => file.id !== confirmDelete.fileId));
+      setConfirmDelete({open: false, fileId: null, fileName: ''});
+    } catch (err) {
+      setError('Ошибка при удалении файла: ' + err);
     } finally {
       setIsLoading(false);
     }
@@ -151,10 +167,10 @@ export default function DashboardPage() {
     setIsLoading(true);
     try {
       const headers = getAuthHeaders();
-      const response = await axios.patch(`${API_URL}/storage/${id}/regenerate-link/`, {}, { headers });
+      const response = await axios.patch(`${API_URL}/storage/${id}/regenerate-link/`, {}, {headers});
 
       setFiles(files.map(f =>
-        f.id === id ? { ...f, download_url: response.data.download_url } : f
+        f.id === id ? {...f, download_url: response.data.download_url} : f
       ));
       setSnackbar('Ссылка обновлена');
     } catch {
@@ -165,13 +181,13 @@ export default function DashboardPage() {
   };
 
   return (
-    <Container sx={{ mt: 4 }}>
+    <Container sx={{mt: 4}}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h4">Мои файлы</Typography>
 
         <Tooltip title="Загрузить файл">
           <IconButton color="primary" onClick={() => setOpenDialog(true)}>
-            <AddIcon />
+            <AddIcon/>
           </IconButton>
         </Tooltip>
       </Box>
@@ -180,7 +196,7 @@ export default function DashboardPage() {
       {snackbar && <Alert onClose={() => setSnackbar('')}>{snackbar}</Alert>}
 
       {isLoading ? (
-        <CircularProgress sx={{ display: 'block', margin: 'auto' }} />
+        <CircularProgress sx={{display: 'block', margin: 'auto'}}/>
       ) : (
         <TableContainer component={Paper}>
           <Table>
@@ -201,11 +217,11 @@ export default function DashboardPage() {
                   <TableCell>{file.original_name}</TableCell>
                   <TableCell>
                     <IconButton onClick={() => handleCopyLink(file.download_url)}>
-                      <ShareIcon />
+                      <ShareIcon/>
                     </IconButton>
                     <Tooltip title="Создать новую публичную ссылку">
                       <IconButton onClick={() => handleRegenerateLink(file.id)}>
-                        <RefreshIcon />
+                        <RefreshIcon/>
                       </IconButton>
                     </Tooltip>
                   </TableCell>
@@ -215,10 +231,10 @@ export default function DashboardPage() {
                   <TableCell>{file.last_download}</TableCell>
                   <TableCell>
                     <IconButton onClick={() => handleDownloadFile(file.id, file.original_name)}>
-                      <FileDownloadIcon />
+                      <FileDownloadIcon/>
                     </IconButton>
-                    <IconButton onClick={() => handleDeleteFile(file.id)}>
-                      <DeleteIcon />
+                    <IconButton onClick={() => askDeleteFile(file.id, file.original_name)}>
+                      <DeleteIcon/>
                     </IconButton>
                   </TableCell>
                 </TableRow>
@@ -228,20 +244,40 @@ export default function DashboardPage() {
         </TableContainer>
       )}
 
+      <Dialog
+        open={confirmDelete.open}
+        onClose={() => setConfirmDelete({open: false, fileId: null, fileName: ''})}
+      >
+        <DialogTitle>Подтвердите удаление</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Вы уверены, что хотите удалить файл <strong>{confirmDelete.fileName}</strong>?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDelete({open: false, fileId: null, fileName: ''})}>
+            Отмена
+          </Button>
+          <Button onClick={confirmDeleteFile} variant="contained" color="error">
+            Удалить
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Загрузка нового файла</DialogTitle>
         <DialogContent>
           <Button
             variant="outlined"
             component="label"
-            sx={{ mb: 2 }}
+            sx={{mb: 2}}
           >
             Выбрать файл
-            <input type="file" hidden onChange={handleFileChange} />
+            <input type="file" hidden onChange={handleFileChange}/>
           </Button>
 
           {uploadFile && (
-            <Typography variant="body2" sx={{ mb: 2 }}>
+            <Typography variant="body2" sx={{mb: 2}}>
               Выбран файл: <b>{uploadFile.name}</b>
             </Typography>
           )}
@@ -254,7 +290,7 @@ export default function DashboardPage() {
           />
 
           {uploadError && (
-            <Alert severity="error" sx={{ mt: 2 }}>
+            <Alert severity="error" sx={{mt: 2}}>
               {uploadError}
             </Alert>
           )}
