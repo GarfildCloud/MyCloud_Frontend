@@ -1,5 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import {Routes, Route, Navigate} from 'react-router-dom';
+import {useSelector} from 'react-redux';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -14,17 +14,33 @@ export default function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={<HomePage />} />
-        <Route path="login" element={isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />} />
-        <Route path="register" element={isAuthenticated ? <Navigate to="/dashboard" /> : <RegisterPage />} />
+      <Route path="/" element={<Layout/>}>
+        <Route index element={<HomePage/>}/>
+        <Route path="login" element={isAuthenticated ? <Navigate to="/dashboard"/> : <LoginPage/>}/>
+        <Route path="register" element={isAuthenticated ? <Navigate to="/dashboard"/> : <RegisterPage/>}/>
         <Route
           path="dashboard"
-          element={isAuthenticated ? <DashboardPage /> : <Navigate to="/login" />}
+          element={isAuthenticated ? <DashboardPage/> : <Navigate to="/login"/>}
+        />
+
+        <Route
+          path="admin"
+          element={
+            <RequireAdmin>
+              <AdminPanelPage/>
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="admin/files/:id"
+          element={
+            <RequireAdmin>
+              <AdminUserFilesPage/>
+            </RequireAdmin>
+          }
         />
       </Route>
-      <Route path="/admin" element={<RequireAdmin><AdminPanelPage /></RequireAdmin>} />
-      <Route path="/admin/files/:id" element={<RequireAdmin><AdminUserFilesPage /></RequireAdmin>} />
     </Routes>
   );
 }
+
