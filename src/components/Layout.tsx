@@ -6,6 +6,7 @@ import {logout as logoutAction} from '../store/authSlice';
 import {useState, useEffect} from 'react';
 import {useSelector} from 'react-redux';
 import {RootState} from '../store';
+import {logout as logoutHelper} from '../services/auth';
 
 
 export default function Layout() {
@@ -18,11 +19,11 @@ export default function Layout() {
   const isAdmin = useSelector((state: RootState) => state.auth.user?.is_admin);
 
 
-  const handleLogout = () => {
-    logout(); // Очистка токенов из localStorage
-    dispatch(logoutAction()); // Сбрасываем состояние аутентификации в Redux
-    setIsLoggingOut(true); // Устанавливаем флаг для выхода
-  };
+ const handleLogout = () => {
+  dispatch(logoutAction());
+  logoutHelper();
+};
+  
 
   // Используем useEffect для перенаправления после выхода
   useEffect(() => {

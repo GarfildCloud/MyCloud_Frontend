@@ -45,6 +45,7 @@ export default function RegisterPage() {
     if (err) return setError(err);
 
     try {
+      
       await axios.post(`${API_URL}/users/register/`, form);
       navigate('/login');
     } catch (err) {
@@ -53,6 +54,7 @@ export default function RegisterPage() {
         setError(error.response.data.detail);
       } else {
         setError('Ошибка регистрации. Проверьте данные.');
+        console.log(error);
       }
     }
   };
