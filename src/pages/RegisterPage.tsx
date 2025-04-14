@@ -3,8 +3,8 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios, { AxiosError } from 'axios';
-import { API_URL } from '../config';
+import { AxiosError } from 'axios';
+import { register } from '../services/auth';
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -14,6 +14,7 @@ export default function RegisterPage() {
     password: '',
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,22 +41,32 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     const err = validate();
-    if (err) return setError(err);
+    if (err) {
+      setError(err);
+      setLoading(false);
+      return;
+    }
 
     try {
-      
-      await axios.post(`${API_URL}/users/register/`, form);
-      navigate('/login');
+      await register(
+        form.username,
+        form.password,
+        form.email,
+        form.full_name
+      );
+      navigate('/dashboard');
     } catch (err) {
       const error = err as AxiosError<{ detail: string }>;
       if (error.response?.data?.detail) {
         setError(error.response.data.detail);
       } else {
         setError('Ошибка регистрации. Проверьте данные.');
-        console.log(error);
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,6 +86,7 @@ export default function RegisterPage() {
             fullWidth
             required
             margin="normal"
+            disabled={loading}
           />
           <TextField
             label="Полное имя"
@@ -83,6 +95,7 @@ export default function RegisterPage() {
             onChange={handleChange}
             fullWidth
             margin="normal"
+            disabled={loading}
           />
           <TextField
             label="Email"
@@ -92,6 +105,7 @@ export default function RegisterPage() {
             fullWidth
             required
             margin="normal"
+            disabled={loading}
           />
           <TextField
             label="Пароль"
@@ -102,14 +116,16 @@ export default function RegisterPage() {
             fullWidth
             required
             margin="normal"
+            disabled={loading}
           />
           <Button
             type="submit"
             variant="contained"
             fullWidth
             sx={{ mt: 2 }}
+            disabled={loading}
           >
-            Зарегистрироваться
+            {loading ? 'Регистрация...' : 'Зарегистрироваться'}
           </Button>
         </form>
       </Box>

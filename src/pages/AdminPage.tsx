@@ -7,7 +7,6 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'; // Иконка "Назад"
-import { getAccessToken } from '../services/auth';
 import axios from 'axios';
 import { API_URL } from '../config';
 import { useNavigate } from 'react-router-dom';
@@ -32,16 +31,10 @@ export default function AdminPanelPage() {
     username: string;
   }>({ open: false, userId: null, username: '' });
 
-  const getAuthHeaders = () => {
-    const token = getAccessToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
-
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const headers = getAuthHeaders();
-      const response = await axios.get(`${API_URL}/users/all/`, { headers });
+      const response = await axios.get(`${API_URL}/users/all/`);
       setUsers(response.data);
     } catch (err) {
       setError('Не удалось загрузить список пользователей: ' + err);
@@ -57,8 +50,7 @@ export default function AdminPanelPage() {
   const confirmDeleteUser = async () => {
     if (!confirmDelete.userId) return;
     try {
-      const headers = getAuthHeaders();
-      await axios.delete(`${API_URL}/users/${confirmDelete.userId}/`, { headers });
+      await axios.delete(`${API_URL}/users/${confirmDelete.userId}/`);
       setUsers(users.filter(user => user.id !== confirmDelete.userId));
       setConfirmDelete({ open: false, userId: null, username: '' });
     } catch {
@@ -68,8 +60,7 @@ export default function AdminPanelPage() {
 
   const handleToggleAdmin = async (id: number) => {
     try {
-      const headers = getAuthHeaders();
-      const response = await axios.patch(`${API_URL}/users/${id}/admin/`, {}, { headers });
+      const response = await axios.patch(`${API_URL}/users/${id}/admin/`);
       setUsers(users.map(user => user.id === id ? { ...user, is_admin: response.data.is_admin } : user));
     } catch {
       setError('Ошибка при смене статуса администратора');

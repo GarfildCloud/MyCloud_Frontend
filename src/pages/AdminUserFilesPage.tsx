@@ -5,7 +5,6 @@ import {
 } from '@mui/material';
 import {useParams, useNavigate} from 'react-router-dom';
 import axios from 'axios';
-import {getAccessToken} from '../services/auth';
 import {API_URL} from '../config';
 
 interface CustomFile {
@@ -27,11 +26,6 @@ export default function AdminUserFilesPage() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const getAuthHeaders = () => {
-    const token = getAccessToken();
-    return token ? {Authorization: `Bearer ${token}`} : {};
-  };
-
   const formatSize = (size: number) => {
     if (size < 1024) return `${size} B`;
     if (size < 1048576) return `${(size / 1024).toFixed(2)} KB`;
@@ -42,14 +36,12 @@ export default function AdminUserFilesPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const headers = getAuthHeaders();
-
         // Получаем имя пользователя
-        const userResp = await axios.get(`${API_URL}/users/${id}/`, {headers});
+        const userResp = await axios.get(`${API_URL}/users/${id}/`);
         setFullName(userResp.data.full_name);
 
         // Получаем файлы пользователя
-        const filesResp = await axios.get(`${API_URL}/storage/?user_id=${id}`, {headers});
+        const filesResp = await axios.get(`${API_URL}/storage/?user_id=${id}`);
         setFiles(filesResp.data);
       } catch (err) {
         setError('Ошибка при получении данных о пользователе или его файлах: ' + err);

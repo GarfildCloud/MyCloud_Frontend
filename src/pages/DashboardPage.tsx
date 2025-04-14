@@ -12,7 +12,6 @@ import ShareIcon from '@mui/icons-material/Share';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import AddIcon from '@mui/icons-material/Add';
 
-import {getAccessToken} from '../services/auth';
 import axios from 'axios';
 import {API_URL} from '../config';
 
@@ -29,7 +28,7 @@ interface StoredFile {
 
 export default function DashboardPage() {
   const [files, setFiles] = useState<StoredFile[]>([]);
-  const [uploadFile, setUploadFile] = useState<File | null>(null); // DOM File
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [comment, setComment] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -44,11 +43,6 @@ export default function DashboardPage() {
     fileName: string;
   }>({open: false, fileId: null, fileName: ''});
 
-  const getAuthHeaders = () => {
-    const token = getAccessToken();
-    return token ? {Authorization: `Bearer ${token}`} : {};
-  };
-
   const sortFilesByName = (files: StoredFile[]) => {
     return files.sort((a, b) => a.original_name.localeCompare(b.original_name));
   };
@@ -57,8 +51,7 @@ export default function DashboardPage() {
     const fetchFiles = async () => {
       setIsLoading(true);
       try {
-        const headers = getAuthHeaders();
-        const response = await axios.get(`${API_URL}/storage/`, {headers});
+        const response = await axios.get(`${API_URL}/storage/`);
         setFiles(sortFilesByName(response.data));
       } catch {
         setError('Ошибка при загрузке файлов');
@@ -89,10 +82,8 @@ export default function DashboardPage() {
     setIsLoading(true);
 
     try {
-      const headers = getAuthHeaders();
       const response = await axios.post(`${API_URL}/storage/`, formData, {
         headers: {
-          ...headers,
           'Content-Type': 'multipart/form-data',
         },
       });
@@ -120,8 +111,7 @@ export default function DashboardPage() {
 
     setIsLoading(true);
     try {
-      const headers = getAuthHeaders();
-      await axios.delete(`${API_URL}/storage/${confirmDelete.fileId}/`, {headers});
+      await axios.delete(`${API_URL}/storage/${confirmDelete.fileId}/`);
       setFiles(files.filter((file) => file.id !== confirmDelete.fileId));
       setConfirmDelete({open: false, fileId: null, fileName: ''});
     } catch (err) {
@@ -134,9 +124,7 @@ export default function DashboardPage() {
   const handleDownloadFile = async (id: string, originalName: string) => {
     setIsLoading(true);
     try {
-      const headers = getAuthHeaders();
       const response = await axios.get(`${API_URL}/storage/${id}/download/`, {
-        headers,
         responseType: 'blob',
       });
 
@@ -166,8 +154,7 @@ export default function DashboardPage() {
   const handleRegenerateLink = async (id: string) => {
     setIsLoading(true);
     try {
-      const headers = getAuthHeaders();
-      const response = await axios.patch(`${API_URL}/storage/${id}/regenerate-link/`, {}, {headers});
+      const response = await axios.patch(`${API_URL}/storage/${id}/regenerate-link/`);
 
       setFiles(files.map(f =>
         f.id === id ? {...f, download_url: response.data.download_url} : f

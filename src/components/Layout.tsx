@@ -1,36 +1,38 @@
 import {AppBar, Toolbar, Typography, Button, Container, Box} from '@mui/material';
 import {Link, useNavigate, Outlet} from 'react-router-dom';
-import {getAccessToken, logout} from '../services/auth';
 import {useDispatch} from 'react-redux';
 import {logout as logoutAction} from '../store/authSlice';
-import {useState, useEffect} from 'react';
 import {useSelector} from 'react-redux';
 import {RootState} from '../store';
 import {logout as logoutHelper} from '../services/auth';
-
+import {useState} from 'react';
 
 export default function Layout() {
-  const [isLoggingOut, setIsLoggingOut] = useState(false); // Состояние для отслеживания выхода
-  const isLoggedIn = !!getAccessToken();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const fullName = useSelector((state: RootState) => state.auth.user?.full_name);
-  const isAdmin = useSelector((state: RootState) => state.auth.user?.is_admin);
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isLoggedIn = !!user;
+  const fullName = user?.full_name;
+  const isAdmin = user?.is_admin;
 
-
- const handleLogout = () => {
-  dispatch(logoutAction());
-  logoutHelper();
-};
-  
-
-  // Используем useEffect для перенаправления после выхода
-  useEffect(() => {
-    if (isLoggingOut) {
-      navigate('/login'); // Перенаправляем на страницу логина после выхода
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await logoutHelper();
+      // После успешного выхода перенаправляем на страницу входа
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Ошибка при выходе:', error);
+      // Даже если произошла ошибка, все равно перенаправляем на страницу входа
+      // и очищаем состояние в Redux
+      dispatch(logoutAction());
+      navigate('/login', { replace: true });
+    } finally {
+      setIsLoggingOut(false);
     }
-  }, [isLoggingOut, navigate]); // Зависимость от isLoggingOut
+  };
 
   return (
     <>
@@ -70,8 +72,12 @@ export default function Layout() {
 
           {/* Кнопки в зависимости от авторизации */}
           {isLoggedIn ? (
-            <Button color="inherit" onClick={handleLogout}>
-              Выйти
+            <Button 
+              color="inherit" 
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+            >
+              {isLoggingOut ? 'Выход...' : 'Выйти'}
             </Button>
           ) : (
             <>
