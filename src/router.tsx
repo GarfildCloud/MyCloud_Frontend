@@ -8,9 +8,10 @@ import DashboardPage from './pages/DashboardPage'; // Используем Dashb
 import RequireAdmin from './components/RequireAdmin';
 import AdminPanelPage from './pages/AdminPage';
 import AdminUserFilesPage from './pages/AdminUserFilesPage';
+import { RootState } from './store';
 
 export default function AppRoutes() {
-  const isAuthenticated = useSelector((state: any) => state.auth.isAuthenticated);
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
 
   return (
     <Routes>

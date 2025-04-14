@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Container, Typography, Table, TableHead, TableRow, TableCell,
   TableBody, Paper, TableContainer, IconButton, Tooltip, CircularProgress,
@@ -37,7 +37,7 @@ export default function AdminPanelPage() {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const headers = getAuthHeaders();
@@ -48,7 +48,7 @@ export default function AdminPanelPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const askDeleteUser = (userId: number, username: string) => {
     setConfirmDelete({ open: true, userId, username });
@@ -78,7 +78,7 @@ export default function AdminPanelPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   return (
     <Container sx={{ mt: 4 }}>

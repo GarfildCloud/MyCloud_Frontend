@@ -3,7 +3,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { API_URL } from '../config';
 
 export default function RegisterPage() {
@@ -47,9 +47,10 @@ export default function RegisterPage() {
     try {
       await axios.post(`${API_URL}/users/register/`, form);
       navigate('/login');
-    } catch (err: any) {
-      if (err.response?.data?.detail) {
-        setError(err.response.data.detail);
+    } catch (err) {
+      const error = err as AxiosError<{ detail: string }>;
+      if (error.response?.data?.detail) {
+        setError(error.response.data.detail);
       } else {
         setError('Ошибка регистрации. Проверьте данные.');
       }

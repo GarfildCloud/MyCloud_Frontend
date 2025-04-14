@@ -2,6 +2,7 @@ import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {TextField, Button, Container, Typography, Box, Alert} from '@mui/material';
 import {login} from '../services/auth';
+import { AxiosError } from 'axios';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -14,11 +15,12 @@ export default function LoginPage() {
     setError('');
 
     try {
-      await login(username, password); // ✅ этого достаточно
+      await login(username, password);
       navigate('/dashboard');
 
-    } catch (err: any) {
-      if (err.response?.status === 401) {
+    } catch (err) {
+      const error = err as AxiosError;
+      if (error.response?.status === 401) {
         setError('Неверный логин или пароль');
       } else {
         setError('Ошибка входа. Попробуйте позже.');
