@@ -11,6 +11,7 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import ShareIcon from '@mui/icons-material/Share';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
 
 import axios from 'axios';
 // import {API_URL} from '../config';
@@ -44,6 +45,20 @@ export default function DashboardPage() {
     fileId: string | null;
     fileName: string;
   }>({open: false, fileId: null, fileName: ''});
+
+  // Стейт для редактирования имени файла
+  const [editNameDialog, setEditNameDialog] = useState<{
+    open: boolean;
+    fileId: string | null;
+    originalName: string;
+  }>({ open: false, fileId: null, originalName: '' });
+
+  // Стейт для редактирования комментария
+  const [editCommentDialog, setEditCommentDialog] = useState<{
+    open: boolean;
+    fileId: string | null;
+    comment: string;
+  }>({ open: false, fileId: null, comment: '' });
 
   const sortFilesByName = (files: StoredFile[]) => {
     return files.sort((a, b) => a.original_name.localeCompare(b.original_name));
@@ -204,7 +219,23 @@ export default function DashboardPage() {
             <TableBody>
               {files.map(file => (
                 <TableRow key={file.id}>
-                  <TableCell>{file.original_name}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      {file.original_name}
+                      <Tooltip title="Переименовать">
+                        <IconButton 
+                          size="small"
+                          onClick={() => setEditNameDialog({ 
+                            open: true, 
+                            fileId: file.id, 
+                            originalName: file.original_name 
+                          })}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
                   <TableCell>
                     <IconButton onClick={() => handleCopyLink(file.download_url)}>
                       <ShareIcon/>
@@ -216,7 +247,23 @@ export default function DashboardPage() {
                     </Tooltip>
                   </TableCell>
                   <TableCell>{formatFileSize(file.size)}</TableCell>
-                  <TableCell>{file.comment}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      {file.comment}
+                      <Tooltip title="Редактировать комментарий">
+                        <IconButton 
+                          size="small"
+                          onClick={() => setEditCommentDialog({ 
+                            open: true, 
+                            fileId: file.id, 
+                            comment: file.comment 
+                          })}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
                   <TableCell>{file.upload_date}</TableCell>
                   <TableCell>{file.last_download}</TableCell>
                   <TableCell>
@@ -288,6 +335,110 @@ export default function DashboardPage() {
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Отмена</Button>
           <Button onClick={handleUpload} variant="contained">Загрузить</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Диалог редактирования имени */}
+      <Dialog 
+        open={editNameDialog.open} 
+        onClose={() => setEditNameDialog({ open: false, fileId: null, originalName: '' })}
+      >
+        <DialogTitle>Переименовать файл</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Новое имя файла"
+            value={editNameDialog.originalName}
+            onChange={(e) =>
+              setEditNameDialog((prev) => ({ ...prev, originalName: e.target.value }))
+            }
+            sx={{ mt: 2 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditNameDialog({ open: false, fileId: null, originalName: '' })}>
+            Отмена
+          </Button>
+          <Button
+            onClick={async () => {
+              if (!editNameDialog.fileId) return;
+              setIsLoading(true);
+              try {
+                const response = await axios.patch(`/storage/${editNameDialog.fileId}/`, {
+                  original_name: editNameDialog.originalName,
+                });
+                setFiles((prev) =>
+                  sortFilesByName(prev.map((file) =>
+                    file.id === editNameDialog.fileId
+                      ? { ...file, original_name: response.data.original_name }
+                      : file
+                  ))
+                );
+                setEditNameDialog({ open: false, fileId: null, originalName: '' });
+              } catch (error) {
+                console.error('Ошибка при переименовании файла:', error);
+                setError('Ошибка при переименовании файла');
+              } finally {
+                setIsLoading(false);
+              }
+            }}
+            variant="contained"
+          >
+            Сохранить
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Диалог редактирования комментария */}
+      <Dialog 
+        open={editCommentDialog.open} 
+        onClose={() => setEditCommentDialog({ open: false, fileId: null, comment: '' })}
+      >
+        <DialogTitle>Редактировать комментарий</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Комментарий"
+            value={editCommentDialog.comment}
+            onChange={(e) =>
+              setEditCommentDialog((prev) => ({ ...prev, comment: e.target.value }))
+            }
+            multiline
+            rows={3}
+            sx={{ mt: 2 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditCommentDialog({ open: false, fileId: null, comment: '' })}>
+            Отмена
+          </Button>
+          <Button
+            onClick={async () => {
+              if (!editCommentDialog.fileId) return;
+              setIsLoading(true);
+              try {
+                const response = await axios.patch(`/storage/${editCommentDialog.fileId}/`, {
+                  comment: editCommentDialog.comment,
+                });
+                setFiles((prev) =>
+                  sortFilesByName(prev.map((file) =>
+                    file.id === editCommentDialog.fileId
+                      ? { ...file, comment: response.data.comment }
+                      : file
+                  ))
+                );
+                setEditCommentDialog({ open: false, fileId: null, comment: '' });
+              } catch (error) {
+                console.error('Ошибка при обновлении комментария:', error);
+                setError('Ошибка при обновлении комментария');
+              } finally {
+                setIsLoading(false);
+              }
+            }}
+            variant="contained"
+          >
+            Сохранить
+          </Button>
         </DialogActions>
       </Dialog>
     </Container>
