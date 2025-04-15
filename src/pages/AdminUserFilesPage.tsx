@@ -5,7 +5,6 @@ import {
 } from '@mui/material';
 import {useParams, useNavigate} from 'react-router-dom';
 import axios from 'axios';
-import {API_URL} from '../config';
 
 interface CustomFile {
   id: string;
@@ -16,7 +15,10 @@ interface CustomFile {
   last_download: string;
 }
 
-type RouteParams = { id: string };
+type RouteParams = {
+  id: string;
+  [key: string]: string | undefined;
+};
 
 export default function AdminUserFilesPage() {
   const {id} = useParams<RouteParams>();
@@ -37,11 +39,11 @@ export default function AdminUserFilesPage() {
       setLoading(true);
       try {
         // Получаем имя пользователя
-        const userResp = await axios.get(`${API_URL}/users/${id}/`);
+        const userResp = await axios.get(`/users/${id}/`);
         setFullName(userResp.data.full_name);
 
         // Получаем файлы пользователя
-        const filesResp = await axios.get(`${API_URL}/storage/?user_id=${id}`);
+        const filesResp = await axios.get(`/storage/?user_id=${id}`);
         setFiles(filesResp.data);
       } catch (err) {
         setError('Ошибка при получении данных о пользователе или его файлах: ' + err);

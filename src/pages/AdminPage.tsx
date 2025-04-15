@@ -8,12 +8,12 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'; // Иконка "Назад"
 import axios from 'axios';
-import { API_URL } from '../config';
 import { useNavigate } from 'react-router-dom';
 
 interface User {
   id: number;
   username: string;
+  full_name: string;
   email: string;
   is_admin: boolean;
 }
@@ -28,42 +28,45 @@ export default function AdminPanelPage() {
   const [confirmDelete, setConfirmDelete] = useState<{
     open: boolean;
     userId: number | null;
-    username: string;
-  }>({ open: false, userId: null, username: '' });
+    userName: string;
+  }>({ open: false, userId: null, userName: '' });
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/users/all/`);
+      const response = await axios.get('/users/all/');
       setUsers(response.data);
     } catch (err) {
-      setError('Не удалось загрузить список пользователей: ' + err);
+      setError('Ошибка при загрузке списка пользователей: ' + err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const askDeleteUser = (userId: number, username: string) => {
-    setConfirmDelete({ open: true, userId, username });
+  const askDeleteUser = (userId: number, userName: string) => {
+    setConfirmDelete({ open: true, userId, userName });
   };
 
   const confirmDeleteUser = async () => {
     if (!confirmDelete.userId) return;
     try {
-      await axios.delete(`${API_URL}/users/${confirmDelete.userId}/`);
+      await axios.delete(`/users/${confirmDelete.userId}/`);
       setUsers(users.filter(user => user.id !== confirmDelete.userId));
-      setConfirmDelete({ open: false, userId: null, username: '' });
-    } catch {
-      setError('Не удалось удалить пользователя');
+      setConfirmDelete({ open: false, userId: null, userName: '' });
+    } catch (err) {
+      setError('Ошибка при удалении пользователя: ' + err);
     }
   };
 
   const handleToggleAdmin = async (id: number) => {
+    setLoading(true);
     try {
-      const response = await axios.patch(`${API_URL}/users/${id}/admin/`);
+      const response = await axios.patch(`/users/${id}/admin/`);
       setUsers(users.map(user => user.id === id ? { ...user, is_admin: response.data.is_admin } : user));
-    } catch {
-      setError('Ошибка при смене статуса администратора');
+    } catch (err) {
+      setError('Ошибка при изменении прав администратора: ' + err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -135,16 +138,16 @@ export default function AdminPanelPage() {
       {/* Модальное окно подтверждения удаления пользователя */}
       <Dialog
         open={confirmDelete.open}
-        onClose={() => setConfirmDelete({ open: false, userId: null, username: '' })}
+        onClose={() => setConfirmDelete({ open: false, userId: null, userName: '' })}
       >
         <DialogTitle>Подтверждение удаления</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Вы действительно хотите удалить пользователя <b>{confirmDelete.username}</b>? Это действие необратимо.
+            Вы действительно хотите удалить пользователя <b>{confirmDelete.userName}</b>? Это действие необратимо.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmDelete({ open: false, userId: null, username: '' })}>
+          <Button onClick={() => setConfirmDelete({ open: false, userId: null, userName: '' })}>
             Отмена
           </Button>
           <Button onClick={confirmDeleteUser} color="error">

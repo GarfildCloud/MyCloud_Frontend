@@ -25,7 +25,7 @@ export default function LoginPage() {
       navigate('/dashboard');
     } catch (err) {
       const error = err as AxiosError;
-      if (error.response?.status === 403) {
+      if (error.response?.status === 401) {
         setError('Неверное имя пользователя или пароль');
       } else if (error.response?.data && typeof error.response.data === 'object' && 'detail' in error.response.data) {
         setError(error.response.data.detail as string);

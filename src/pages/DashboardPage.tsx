@@ -13,7 +13,9 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import AddIcon from '@mui/icons-material/Add';
 
 import axios from 'axios';
-import {API_URL} from '../config';
+// import {API_URL} from '../config';
+
+import { getCsrfToken } from '../services/auth';
 
 // ✅ Переименованный интерфейс для хранимого файла
 interface StoredFile {
@@ -51,7 +53,7 @@ export default function DashboardPage() {
     const fetchFiles = async () => {
       setIsLoading(true);
       try {
-        const response = await axios.get(`${API_URL}/storage/`);
+        const response = await axios.get(`/storage/`);
         setFiles(sortFilesByName(response.data));
       } catch {
         setError('Ошибка при загрузке файлов');
@@ -82,9 +84,10 @@ export default function DashboardPage() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/storage/`, formData, {
+      const response = await axios.post(`/storage/`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'X-CSRFToken': getCsrfToken(),
         },
       });
 
@@ -111,7 +114,7 @@ export default function DashboardPage() {
 
     setIsLoading(true);
     try {
-      await axios.delete(`${API_URL}/storage/${confirmDelete.fileId}/`);
+      await axios.delete(`/storage/${confirmDelete.fileId}/`);
       setFiles(files.filter((file) => file.id !== confirmDelete.fileId));
       setConfirmDelete({open: false, fileId: null, fileName: ''});
     } catch (err) {
@@ -124,7 +127,7 @@ export default function DashboardPage() {
   const handleDownloadFile = async (id: string, originalName: string) => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/storage/${id}/download/`, {
+      const response = await axios.get(`/storage/${id}/download/`, {
         responseType: 'blob',
       });
 
@@ -154,7 +157,7 @@ export default function DashboardPage() {
   const handleRegenerateLink = async (id: string) => {
     setIsLoading(true);
     try {
-      const response = await axios.patch(`${API_URL}/storage/${id}/regenerate-link/`);
+      const response = await axios.patch(`/storage/${id}/regenerate-link/`);
 
       setFiles(files.map(f =>
         f.id === id ? {...f, download_url: response.data.download_url} : f
