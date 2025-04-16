@@ -164,10 +164,27 @@ export default function DashboardPage() {
   };
 
   const handleCopyLink = (link: string) => {
-    navigator.clipboard.writeText(link)
-      .then(() => setSnackbar('Ссылка скопирована'))
-      .catch(() => setSnackbar('Не удалось скопировать ссылку'));
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link)
+        .then(() => setSnackbar('Ссылка скопирована'))
+        .catch(() => setSnackbar('Не удалось скопировать ссылку'));
+    } else {
+      // fallback
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = link;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        setSnackbar('Ссылка скопирована');
+      } catch (e) {
+        setSnackbar('Не удалось скопировать ссылку');
+      }
+    }
   };
+  
 
   const handleRegenerateLink = async (id: string) => {
     setIsLoading(true);
